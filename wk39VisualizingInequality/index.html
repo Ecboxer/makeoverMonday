@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<title>Survey Network</title>
+	<script type="text/javascript" src="d3/d3.js"></script>
+	<style>
+	    .link {
+	    stroke: #aaa;
+	    }
+
+	    .node text {
+	    stroke:#333;
+	    cursor:pointer;
+	    }
+
+	    .node circle{
+	    stroke:#fff;
+	    stroke-width:3px;
+	    fill:#555;
+	    }
+	</style>
+    </head>
+    <body>
+	<script type="text/javascript">
+
+	 //Display specifications
+	 var margin = {top: 10, right: 10, bottom: 10, left: 10};
+	 var width = 1600 - margin.left - margin.right;
+	 var height = 800 - margin.top - margin.bottom;
+
+	 var svg = d3.select("body").append("svg")
+		     .attr("width", width + margin.left + margin.right)
+		     .attr("height", height + margin.top + margin.bottom)
+		     .append("g")
+		     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	 d3.json("graphFileMultipunch.json", function (json) {
+	     root = json;
+	     console.log(root);
+	 });
+	 
+	</script>
+    </body>
+</html>
