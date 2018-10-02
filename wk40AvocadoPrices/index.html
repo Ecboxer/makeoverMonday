@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<title>Avocado Prices</title>
+	<script src="d3/d3.js" charset="utf-8"></script>
+    </head>
+    <body>
+	<script type="text/javascript">
+
+	 //Display specifications
+	 var margin = {top:10, right:10, bottom:10, left:10};
+	 var width = 800 - margin.left - margin.right;
+	 var height = 600 - margin.top - margin.bottom;
+
+	 d3.csv("resources/avgPrice.csv", function (d) {
+	     return { avgPriceRatio: d.avgPriceRatio,
+		      avgPriceConv: d.avgPriceConv,
+		      avgPriceOrg: d.avgPriceOrg,
+		      diff: d.difference,
+		      totConv: d.totVolConv,
+		      totOrg: d.totVolOrg,
+		      region: d.region
+	     };
+	 }).then(function (data) {
+
+	     //Scale for the length bars
+	     var xScale = d3.scaleLinear()
+			    .domain([0, d3.max(data, function (d) { return d.avgPriceOrg; })])
+			    .range([0, width]);
+
+	     //Scale for vertical position of bars
+	     var yScale = d3.scaleLinear()
+			    .domain([0, data.length])
+			    .range([0, height]);
+
+	     //Scale for height of bars, by total volume
+	     var hScale = d3.scaleLinear()
+			    .domain([0, d3.max(data, function (d) { return d.totConv; })])
+			    .range([0, 10]); //Placeholder range
+
+	     var container = d3.select("body")
+			       .append("svg")
+	     		       .attr("width", width + margin.left + margin.right)
+	     		       .attr("height", height + margin.top + margin.bottom)
+			       .append("g")
+			       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	     //Conventional Prices
+	     var rectConv = container.selectAll("rect")
+				     .data(data)
+				     .enter()
+				     .append("rect")
+				     .attr("x", 0)
+				     .attr("y", function (d, i) { return yScale(i); })
+				     .attr("width", function (d) {
+					 return xScale(d.avgPriceConv);
+				     })
+				     .attr("height", function (d) {
+					 return Math.sqrt(hScale(d.totConv));
+				     })
+				     .style("fill", "blue")
+				     .style("opacity", .5)
+				     .append("title")
+				     .text(function (d) {
+					 return d.region + " Conventional:\nAverage Price: " + d.avgPriceConv + "\nAverage Volume: " + d.totConv;
+				     });
+
+	     //Organic Prices
+	     var rectOrg = container.selectAll(".in")
+				    .data(data)
+				    .enter()
+				    .append("rect")
+				    .attr("x", 0)
+				    .attr("y", function (d, i) {
+					return yScale(i) + Math.sqrt(hScale(d.totConv));
+				    })
+				    .attr("width", function (d) {
+					return xScale(d.avgPriceOrg);
+				    })
+				    .attr("height", function (d) {
+					return Math.sqrt(hScale(d.totConv));
+				    })
+				    .style("fill", "red")
+				    .style("opacity", .5);
+	 })
+	 
+	</script>
+    </body>
+</html>
