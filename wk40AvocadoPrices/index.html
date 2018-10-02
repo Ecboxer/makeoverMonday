@@ -4,6 +4,11 @@
 	<meta charset="utf-8">
 	<title>Avocado Prices</title>
 	<script src="d3/d3.js" charset="utf-8"></script>
+	<style>
+	 .bar:hover {
+	     fill: black;
+	 }
+	</style>
     </head>
     <body>
 	<script type="text/javascript">
@@ -30,14 +35,22 @@
 			    .range([0, width]);
 
 	     //Scale for vertical position of bars
-	     var yScale = d3.scaleLinear()
-			    .domain([0, data.length])
+	     var yScale = d3.scaleBand()
+			    .domain(data.map(function (d) {
+				return d.region;
+			    }))
 			    .range([0, height]);
 
 	     //Scale for height of bars, by total volume
 	     var hScale = d3.scaleLinear()
 			    .domain([0, d3.max(data, function (d) { return d.totConv; })])
-			    .range([0, 10]); //Placeholder range
+			    .range([0, 4]); //Placeholder range
+
+	     //Price formatter
+	     var fp = d3.format("$.2f");
+
+	     //Volume formatter
+	     var fv = d3.format(",.6r")
 
 	     var container = d3.select("body")
 			       .append("svg")
@@ -51,8 +64,9 @@
 				     .data(data)
 				     .enter()
 				     .append("rect")
+				     .attr("class", "bar")
 				     .attr("x", 0)
-				     .attr("y", function (d, i) { return yScale(i); })
+				     .attr("y", function (d, i) { return yScale(d.region); })
 				     .attr("width", function (d) {
 					 return xScale(d.avgPriceConv);
 				     })
@@ -60,21 +74,16 @@
 					 return Math.sqrt(hScale(d.totConv));
 				     })
 				     .style("fill", "blue")
-				     .style("opacity", .5)
-				     .append("title")
-				     .text(function (d) {
-					 return d.region + " Conventional:\nAverage Price: " + d.avgPriceConv + "\nAverage Volume: " + d.totConv;
-				     });
+				     .style("opacity", .5);
 
 	     //Organic Prices
 	     var rectOrg = container.selectAll(".in")
 				    .data(data)
 				    .enter()
 				    .append("rect")
+				    .attr("class", "bar")
 				    .attr("x", 0)
-				    .attr("y", function (d, i) {
-					return yScale(i) + Math.sqrt(hScale(d.totConv));
-				    })
+				    .attr("y", function (d, i) { return yScale(d.region); })
 				    .attr("width", function (d) {
 					return xScale(d.avgPriceOrg);
 				    })
@@ -82,7 +91,12 @@
 					return Math.sqrt(hScale(d.totConv));
 				    })
 				    .style("fill", "red")
-				    .style("opacity", .5);
+				    .style("opacity", .5)
+				    .append("title")
+				    .text(function (d) {
+			 		return d.region + ":\nAverage Price Conventional: " + fp(d.avgPriceConv) + "\nAverage Volume: " + fv(d.totConv) + "\nAverage Price Organic: " + fp(d.avgPriceOrg) + "\nAverage Volume: " + fv(d.totOrg);
+				    });
+	     
 	 })
 	 
 	</script>
