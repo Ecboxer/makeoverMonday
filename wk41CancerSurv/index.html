@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<title>Cancer Study</title>
+	<script src="d3/d3.js" charset="utf-8"></script>
+	<style>
+	    label {
+	    font-family: sans-serif;
+	    }
+	</style>
+    </head>
+    <body>
+	<div id="graph"></div>
+
+	<input class="selector" type="checkbox" id="genderTotal" value="genderTotal"/><label for="genderTotal">All genders</label>
+	<input class="selector" type="checkbox" id="genderMale" value="genderMale"/><label for="genderMale">Male</label>
+	<input class="selector" type="checkbox" id="genderFemale" value="genderFemale"/><label for="genderFemale">Female</label>
+	
+	<script type="text/javascript">
+
+	 //Display specifications
+	 var margin = {top:10, right:10, bottom:10, left:10};
+	 var width = window.innerWidth - margin.left - margin.right;
+	 var height = window.innerHeight - margin.top - margin.bottom;
+
+	 d3.csv("resources/cancerTotal.csv", function (d) {
+	     return {surv: d.SurvRate,
+		     year: d.Year
+	     };
+	 }).then(function (data) {
+
+	     //Set ranges
+	     var x = d3.scaleTime().range([0, width]);
+	     var y = d3.scaleLinear().range([height, 0]);
+
+	     var valueLine = d3.line()
+			       .x(function (d) { return x(d.year); })
+			       .y(function (d) { return y(d.surv); });
+
+	     var container = d3.select("#graph")
+			       .append("svg")
+			       .attr("width", width + margin.left + margin.right)
+			       .attr("height", height + margin.top + margin.bottom)
+			       .append("g")
+			       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	     var pathTotal = container.selectAll(".genderTotal")
+				      .data(data)
+				      .enter()
+				      .append("path")
+				      .attr("class", "genderTotal")
+				      .style("stroke", "purple")
+				      .style("stroke-width", "3px")
+				      .style("stroke-opacity", 1)
+				      .attr("d", valueline);
+
+	 });
+	</script>
+    </body>
+</html>
