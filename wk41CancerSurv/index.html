@@ -13,47 +13,204 @@
     <body>
 	<div id="graph"></div>
 
-	<input class="selector" type="checkbox" id="genderTotal" value="genderTotal"/><label for="genderTotal">All genders</label>
-	<input class="selector" type="checkbox" id="genderMale" value="genderMale"/><label for="genderMale">Male</label>
-	<input class="selector" type="checkbox" id="genderFemale" value="genderFemale"/><label for="genderFemale">Female</label>
+	<input class="selector" type="button" id="Total" value="total"/>
+	<input class="selector" type="button" id="Male" value="male"/>
+	<input class="selector" type="button" id="Female" value="female"/>
 	
 	<script type="text/javascript">
 
 	 //Display specifications
-	 var margin = {top:10, right:10, bottom:10, left:10};
-	 var width = window.innerWidth - margin.left - margin.right;
-	 var height = window.innerHeight - margin.top - margin.bottom;
+	 const margin = {top:10, right:10, bottom:10, left:10};
+	 const width = window.innerWidth - margin.left - margin.right;
+	 const height = window.innerHeight - margin.top - margin.bottom;
 
+	 //Format survival rate
+	 const fsr = d3.format(".2f")
+
+	 //Total gender checkbox
+	 d3.selectAll(".selector")
+		       .on("click", function (d) {
+			   update(this.id);
+		       });
+
+	 //Update function
+	 //function update(source);
+	 
 	 d3.csv("resources/cancerTotal.csv", function (d) {
 	     return {surv: d.SurvRate,
 		     year: d.Year
 	     };
 	 }).then(function (data) {
+	     
+	     //Set x scale
+	     var x = d3.scaleTime()
+		       .domain(d3.extent(data, d => d.year))
+		       .range([0, width]);
+	     
+	     //Set y scale
+	     var y = d3.scaleLinear()
+		       .domain([0, d3.max(data, d => d.surv)])
+		       .range([height, 0]);
 
-	     //Set ranges
-	     var x = d3.scaleTime().range([0, width]);
-	     var y = d3.scaleLinear().range([height, 0]);
+	     //line function
+	     var line = d3.line()
+			  .defined(d => d)
+			  .x(d => x(d.year))
+			  .y(d => y(d.surv));
 
-	     var valueLine = d3.line()
-			       .x(function (d) { return x(d.year); })
-			       .y(function (d) { return y(d.surv); });
-
+	     //Create container
 	     var container = d3.select("#graph")
 			       .append("svg")
 			       .attr("width", width + margin.left + margin.right)
 			       .attr("height", height + margin.top + margin.bottom)
 			       .append("g")
+			       .attr("class", "container")
 			       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-	     var pathTotal = container.selectAll(".genderTotal")
-				      .data(data)
-				      .enter()
-				      .append("path")
-				      .attr("class", "genderTotal")
-				      .style("stroke", "purple")
-				      .style("stroke-width", "3px")
-				      .style("stroke-opacity", 1)
-				      .attr("d", valueline);
+	     //Draw time series
+	     var path = container.append("g")
+				 .selectAll(".total")
+				 .data(data)
+				 .enter()
+				 .append("path")
+				 .attr("class", "total")
+				 .attr("fill", "none")
+				 .attr("stroke", "purple")
+				 .attr("mix-blend-mode", "multiply")
+				 .attr("stroke-width", 1)
+				 .attr("stroke-linejoin", "round")
+				 .attr("d", line(data));
+
+	     //Draw year values
+	     var circle = container.append("g")
+				   .selectAll("circle")
+				   .data(data)
+				   .enter()
+				   .append("circle")
+				   .attr("class", "total")
+				   .attr("cx", d => x(d.year))
+				   .attr("cy", d => y(d.surv))
+				   .attr("r", 6)
+				   .attr("fill", "purple")
+				   .attr("fill-opacity", .5)
+				   .append("title")
+				   .text(function (d) {
+				       return d.year + " Total Survival Rate: " + fsr(d.surv);
+				   });
+
+	 });
+
+	 d3.csv("resources/cancerMale.csv", function (d) {
+	     return {surv: d.SurvRateMale,
+		     year: d.Year
+	     };
+	 }).then(function (data) {
+
+	     //Set x scale
+	     var x = d3.scaleTime()
+		       .domain(d3.extent(data, d => d.year))
+		       .range([0, width]);
+	     
+	     //Set y scale
+	     var y = d3.scaleLinear()
+		       .domain([0, d3.max(data, d => d.surv)])
+		       .range([height, 0]);
+
+	     //line function
+	     var line = d3.line()
+			  .defined(d => d)
+			  .x(d => x(d.year))
+			  .y(d => y(d.surv));
+
+	     //Draw time series
+	     var path = d3.select(".container")
+			  .append("g")
+			  .selectAll("path")
+			  .data(data)
+			  .enter()
+			  .append("path")
+			  .attr("class", "male")
+			  .attr("fill", "none")
+			  .attr("stroke", "blue")
+			  .attr("mix-blend-mode", "multiply")
+			  .attr("stroke-width", 1)
+			  .attr("stroke-linejoin", "round")
+			  .attr("d", line(data));
+
+	     //Draw year values
+	     const circle = d3.select(".container")
+			      .append("g")
+			      .selectAll("circle")
+			      .data(data)
+			      .enter()
+			      .append("circle")
+			      .attr("class", "male")
+			      .attr("cx", d => x(d.year))
+			      .attr("cy", d => y(d.surv))
+			      .attr("r", 6)
+			      .attr("fill", "blue")
+			      .attr("fill-opacity", .5)
+			      .append("title")
+			      .text(function (d) {
+				  return d.year + " Male Survival Rate: " + fsr(d.surv);
+			      });
+
+	 });
+
+	 d3.csv("resources/cancerFemale.csv", function (d) {
+	     return {surv: d.SurvRateFemale,
+		     year: d.Year
+	     };
+	 }).then(function (data) {
+
+	     //Set x scale
+	     var x = d3.scaleTime()
+		       .domain(d3.extent(data, d => d.year))
+		       .range([0, width]);
+	     
+	     //Set y scale
+	     var y = d3.scaleLinear()
+		       .domain([0, d3.max(data, d => d.surv)])
+		       .range([height, 0]);
+
+	     //line function
+	     var line = d3.line()
+			  .defined(d => d)
+			  .x(d => x(d.year))
+			  .y(d => y(d.surv));
+
+	     //Draw time series
+	     var path = d3.select(".container")
+			  .append("g")
+			  .selectAll("path")
+			  .data(data)
+			  .enter()
+			  .append("path")
+			  .attr("class", "female")
+			  .attr("fill", "none")
+			  .attr("stroke", "red")
+			  .attr("mix-blend-mode", "multiply")
+			  .attr("stroke-width", 1)
+			  .attr("stroke-linejoin", "round")
+			  .attr("d", line(data));
+
+	     //Draw year values
+	     const circle = d3.select(".container")
+			      .append("g")
+			      .selectAll("circle")
+			      .data(data)
+			      .enter()
+			      .append("circle")
+			      .attr("class", "female")
+			      .attr("cx", d => x(d.year))
+			      .attr("cy", d => y(d.surv))
+			      .attr("r", 6)
+			      .attr("fill", "red")
+			      .attr("fill-opacity", .5)
+			      .append("title")
+			      .text(function (d) {
+				  return d.year + " Female Survival Rate: " + fsr(d.surv);
+			      });
 
 	 });
 	</script>
