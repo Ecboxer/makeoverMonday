@@ -2,44 +2,124 @@
 <html lang="en">
     <head>
 	<meta charset="utf-8">
-	<title>Survey Network</title>
+	<title>Visualizing Equality</title>
 	<script type="text/javascript" src="d3/d3.js"></script>
 	<style>
-	    .link {
-	    stroke: #aaa;
-	    }
-
-	    .node text {
-	    stroke:#333;
-	    cursor:pointer;
-	    }
-
-	    .node circle{
-	    stroke:#fff;
-	    stroke-width:3px;
-	    fill:#555;
+	    p {
+	    font-family: "sans-serif"
 	    }
 	</style>
     </head>
     <body>
-	<script type="text/javascript">
+	<p>Visualizing Equality</p>
+	<p>Gender-related policy priorities identified by advocates</p>
+	<p>SOURCE: <a href="http://data.em2030.org/wp-content/uploads/2018/09/EM2030-2018-Global-Report.pdf" target="_blank">Equal Measures 2030</a></p>
+	    <script type="text/javascript">
 
-	 //Display specifications
-	 var margin = {top: 10, right: 10, bottom: 10, left: 10};
-	 var width = 1600 - margin.left - margin.right;
-	 var height = 800 - margin.top - margin.bottom;
+	     //Display specifications
+	     var margin = {top: 10, right: 10, bottom: 10, left: 10};
+	     var width = 800;
+	     var height = 600;
 
-	 var svg = d3.select("body").append("svg")
-		     .attr("width", width + margin.left + margin.right)
-		     .attr("height", height + margin.top + margin.bottom)
-		     .append("g")
-		     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	     var options = [
+		 "Sexual and reproductive health and rights",
+		 "Access to comprehensive health services",
+		 "Reducing gender-based violence",
+		 "Equitable and quality education at all levels",
+		 "Economic empowerment, access to land and financial inclusion",
+		 "Women and work, unpaid care and the pay gap",
+		 "Women and the effects of climatic and environmental changes",
+		 "Girls and women in conflict/post-conflict situations",
+		 "Public finance, public spending and taxation",
+		 "None of the above",
+		 "Do not know",
+		 "No answer"
+	     ]
 
-	 d3.json("graphFileMultipunch.json", function (json) {
-	     root = json;
-	     console.log(root);
-	 });
-	 
-	</script>
+	     var svg = d3.select("body").append("svg")
+			 .attr("width", width)
+			 .attr("height", height)
+
+	     var simulation = d3.forceSimulation()
+				.force("link", d3.forceLink())
+				.force("charge", d3.forceManyBody()
+						   .strength(-1000)
+						   .theta(10.0)
+						   .distanceMax(300)
+				)
+				.force("center", d3.forceCenter(width / 2, height / 2));
+
+	     d3.json("resources/graphFileMultipunch.json")
+	       .then(function (graph) {
+
+		   var link = svg.append("g")
+				 .attr("class", "links")
+				 .selectAll("line")
+				 .data(graph.links)
+				 .enter().append("line")
+				 .attr("opacity", 0.8)
+				 .attr("stroke", "#000")
+				 .attr("stroke-width", function (d) { return Math.sqrt(d.weight); });
+
+		   var node = svg.append("g")
+				 .attr("class", "nodes")
+				 .selectAll("circle")
+				 .data(graph.nodes)
+				 .enter().append("circle")
+				 .attr("r", 16)
+				 .attr("opacity", 0.8)
+				 .attr("fill", "#ffffff")
+				 .attr("stroke", "orange")
+				 .attr("stroke-width", "4px")
+				 .call(d3.drag()
+					 .on("start", dragstarted)
+					 .on("drag", dragged)
+					 .on("end", dragended));
+
+		   link.append("title")
+		       .text(function (d) {
+			   return options[d.source] + " and\n" + options[d.target] + "\n" + d.weight; });
+		   
+		   node.append("title")
+		       .text(function (d) { return d.id; });
+
+		   simulation
+		       .nodes(graph.nodes)
+		       .on("tick", ticked);
+
+		   simulation.force("link")
+			     .links(graph.links);
+
+		   function ticked() {
+		       link
+			   .attr("x1", function(d) { return d.source.x; })
+			   .attr("y1", function(d) { return d.source.y; })
+			   .attr("x2", function(d) { return d.target.x; })
+			   .attr("y2", function(d) { return d.target.y; });
+
+		       node
+			   .attr("cx", function(d) { return d.x; })
+			   .attr("cy", function(d) { return d.y; });
+		   } 
+	       });
+
+	     function dragstarted(d) {
+		 if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+		 d.fx = d.x;
+		 d.fy = d.y;
+	     }
+
+	     function dragged(d) {
+		 d.fx = d3.event.x;
+		 d.fy = d3.event.y;
+	     }
+
+	     function dragended(d) {
+		 if (!d3.event.active) simulation.alphaTarget(0);
+		 d.fx = null;
+		 d.fy = null;
+	     }
+	     
+	    </script>
     </body>
 </html>
