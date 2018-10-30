@@ -1,3 +1,3 @@
 #### Makeover Monday ####
 
-Participation in the makeover Monday community
+Participation in makeover Monday 2018
