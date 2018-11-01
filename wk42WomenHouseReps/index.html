@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<title>Gender of Congressional Representatives</title>
+	<script type="text/javascript" src="d3/d3.js"></script>
+	<style>
+	 header {
+	     font-family: sans-serif;
+	     font-size: 20px;
+	 }
+	 p {
+	     font-family: sans-serif;
+	 }
+	</style>
+    </head>
+    <body>
+	<header>Gender makeup for Congressional Representatives of American political parties</header>
+	<p>Full bars represent parity, 50-50 split in representation for men and women. The choice to use parity as the maximum was taken for legibility. It is not meant to assert that parity is an end in and of itself.</p>
+	<p><q>There will be enough women on the Supreme Court when there are nine.</q> - Ruth Bader Ginsburg</p>
+	<script type="text/javascript">
+
+	 //Display specs
+	 const margin = {top:50, right:50, bottom:50, left:50};
+	 const width = Math.min(810, window.innerWidth - margin.left - margin.right);
+	 const height = Math.min(700, window.innerHeight - margin.top - margin.bottom);
+
+	 d3.csv('resources/womenRepsViz.csv', function (d) {
+	     return {cong : d.CongNo,
+		     years : d.Years,
+		     total : d.Total,
+		     republican : d.Republican,
+		     democrat : d.Democratic,
+		     year : d.StartYear,
+		     percWomenD : d.PercOfWomenDem,
+		     percWomenR : d.PercOfWomenRepub,
+		     percPartyD : d.PercOfPartyDem,
+		     percPartyR : d.PercOfPartyRepub
+	     };	 
+	 }).then(function (data) {
+
+	     //51 congs
+	     //Layout: 9 by 6 (last row 3)
+	     const xScale = d3.scaleLinear()
+			      .domain([0, 9])
+			      .range([0, width]);
+
+	     const yScale = d3.scaleLinear()
+			      .domain([0, 6])
+			      .range([0, height]);
+
+	     //Glyph specs
+	     const w = width / 10;
+	     const h = height / 10;
+
+	     //Scale for percent of party
+	     const percScale = d3.scaleLinear()
+				 .domain([0, 50])
+				 .range([0, h]);
+
+	     //Format percent
+	     const fp = d3.format('.2%');
+
+	     //Format percent label
+	     const fpl = d3.format('.0%');
+	     
+	     const container = d3.select('body')
+				 .append('svg')
+				 .attr('width', width + margin.left + margin.right)
+				 .attr('height', height + margin.top + margin.bottom)
+				 .append('g')
+				 .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+	     //Draw Dem background
+	     let rectD = container.selectAll('rect')
+				  .data(data)
+				  .enter()
+				  .append('rect')
+				  .attr('x', function (d, i) {
+				      return xScale(i % 9);
+				  })
+				  .attr('y', function (d, i) {
+				      return yScale(Math.floor(i / 9));
+				  })
+				  .attr('width', w / 2)
+				  .attr('height', h)
+				  .style('fill', '#ccccff');
+
+	     //Draw Repub background
+	     let rectR = container.selectAll('.in')
+				  .data(data)
+				  .enter()
+				  .append('rect')
+				  .attr('x', function (d, i) {
+				      return xScale(i % 9) + w / 2;
+				  })
+				  .attr('y', function (d, i) {
+				      return yScale(Math.floor(i / 9));
+				  })
+				  .attr('width', w / 2)
+				  .attr('height', h)
+				  .style('fill', '#ffcccc');
+
+	     //Draw Dem percent
+	     let percD = container.selectAll('.in')
+				  .data(data)
+				  .enter()
+				  .append('rect')
+				  .attr('x', function (d, i) {
+				      return xScale(i % 9);
+				  })
+				  .attr('y', function (d, i) {
+				      return yScale(Math.floor(i / 9)) + h - percScale(d.percPartyD);
+				  })
+				  .attr('width', w / 2)
+				  .attr('height', d => percScale(d.percPartyD))
+				  .style('fill', '#2222ff');
+
+	     //Draw Repub percent
+	     let percR = container.selectAll('.in')
+				  .data(data)
+				  .enter()
+				  .append('rect')
+				  .attr('x', function (d, i) {
+				      return xScale(i % 9) + w / 2;
+				  })
+				  .attr('y', function (d, i) {
+				      return yScale(Math.floor(i / 9)) + h - percScale(d.percPartyR);
+				  })
+				  .attr('width', w / 2)
+				  .attr('height', d => percScale(d.percPartyR))
+				  .style('fill', '#ff2222');
+
+	     //Congressional session
+	     let session = container.selectAll('text')
+				    .data(data)
+				    .enter()
+				    .append('text')
+				    .attr('x', function (d, i) {
+					return xScale(i % 9) + w / 2;
+				    })
+				    .attr('y', function (d, i) {
+					return yScale(Math.floor(i / 9)) - h / 10;
+				    })
+				    .attr('text-anchor', 'middle')
+				    .style('font-family', 'sans-serif')
+				    .style('font-size', w / 6 + 'px')
+				    .text(function (d) {
+					return '' + d.years;
+				    });
+	     
+
+	     //Democrat share label
+	     const labelD = container.selectAll('.in')
+				     .data(data)
+				     .enter()
+				     .append('text')
+				     .attr('x', function (d, i) {
+					 return xScale(i % 9) + w / 4;
+				     })
+				     .attr('y', function (d, i) {
+					 return yScale(Math.floor(i / 9)) + h / 4;
+				     })
+				     .attr('text-anchor', 'middle')
+				     .style('font-family', 'sans-serif')
+				     .style('font-size', w / 8 + 'px')
+				     .text(d => fpl(d.percPartyD / 100));
+	     
+	     //Republican share label
+	     const labelR = container.selectAll('.in')
+				     .data(data)
+				     .enter()
+				     .append('text')
+				     .attr('x', function (d, i) {
+					 return xScale(i % 9) + 3 * w / 4;
+				     })
+				     .attr('y', function (d, i) {
+					 return yScale(Math.floor(i / 9)) + h / 4;
+				     })
+				     .attr('text-anchor', 'middle')
+				     .style('font-family', 'sans-serif')
+				     .style('font-size', w / 8 + 'px')
+				     .text(d => fpl(d.percPartyR / 100));
+
+	     //Create invisible rect for interaction
+	     var cover = container.selectAll('.in')
+				  .data(data)
+				  .enter()
+				  .append('rect')
+				  .attr('class', 'hover')
+				  .attr('id', function (d) { return 'cong' + d.CongNo; })
+				  .attr('x', (d, i) => xScale(i % 9))
+				  .attr('y', (d, i) => yScale(Math.floor(i / 9)))
+				  .attr('width', w)
+				  .attr('height', h)
+				  .style('fill', '#000000')
+				  .style('opacity', 0)
+				  .on('mouseover', function (d, i) {
+				      d3.select(this).transition()
+					.style('opacity', .2);
+				  })
+				  .on('mouseout', function (d, i) {
+				      d3.select(this).transition()
+					.style('opacity', 0);
+				  })
+				  .append('title')
+				  .text(function (d) {
+				      if (d.cong % 10 === 1) { //Labels with correct st/nd/...
+					  return d.cong + 'st Congress' + '\nFemale share of Democratic party: ' + fp(d.percPartyD / 100) + '\nFemale share of Republican party: ' + fp(d.percPartyR / 100);
+				      } else if (d.cong % 10 === 2) {
+					  return d.cong + 'nd Congress' + '\nFemale share of Democratic party: ' + fp(d.percPartyD / 100) + '\nFemale share of Republican party: ' + fp(d.percPartyR / 100);
+				      } else if (d.cong % 10 === 3) {
+					  return d.cong + 'rd Congress' + '\nFemale share of Democratic party: ' + fp(d.percPartyD / 100) + '\nFemale share of Republican party: ' + fp(d.percPartyR / 100);
+				      } else {
+					  return d.cong + 'th Congress' + '\nFemale share of Democratic party: ' + fp(d.percPartyD / 100) + '\nFemale share of Republican party: ' + fp(d.percPartyR / 100);
+				      }
+				  });
+	     
+	 });
+	</script>
+    </body>
+</html>
